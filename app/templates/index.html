@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Preserving Deep Learning With Learnable Image Encryption On Medical Images</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .image-preview { max-width: 100%; max-height: 300px; width: auto; height: auto; display: block; margin: 0 auto; }
+        .tumor-result { border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+        .tumor-detected { background-color: #fee2e2; border-left: 4px solid #ef4444; }
+        .no-tumor { background-color: #dcfce7; border-left: 4px solid #22c55e; }
+        .error-message { background-color: #fee2e2; border-left: 4px solid #ef4444; color: #b91c1c; padding: 1rem; margin-bottom: 1rem; border-radius: 0.375rem; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="max-w-7xl mx-auto px-4">
+            <h1 class="text-2xl font-bold">Privacy Preserving Deep Learning With Learnable Image Encryption On Medical Images</h1>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Encryption Section -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Upload & Encrypt Image</h2>
+            <form method="POST" action="/encrypt" enctype="multipart/form-data" class="mb-6">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-grow">
+                        <input type="file" name="image" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                    </div>
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium">
+                        Encrypt & Analyze
+                    </button>
+                </div>
+            </form>
+
+            {% if encrypted %}
+            <div class="mt-8">
+                <h3 class="text-xl font-semibold mb-6 text-gray-800">Analysis Results</h3>
+                
+                {% if predictions %}
+                <div class="mb-8">
+                    <h4 class="font-medium mb-3 text-gray-700">Tumor Detection Results</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for model, result in predictions.items() %}
+                        <div class="tumor-result {% if result.Prediction == 'Tumor' %}tumor-detected{% else %}no-tumor{% endif %}">
+                            <h4 class="font-bold text-lg mb-1">{{ model }}</h4>
+                            <p class="text-gray-800">
+                                <span class="font-semibold">Result:</span> {{ result.Prediction }}<br>
+                                <span class="font-semibold">Confidence:</span> {{ "%.2f"|format(result.Confidence * 100) }}%
+                            </p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mb-8">
+                    <h4 class="font-medium mb-3 text-gray-700">Original Scan</h4>
+                    <div class="bg-gray-100 rounded-lg p-2">
+                        <img src="{{ url_for('static', filename='uploads/' + original) }}" class="image-preview">
+                    </div>
+                </div>
+
+                <h4 class="font-medium mb-3 text-gray-700">Encrypted Variations</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {% for name, path in encrypted.items() %}
+                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                        <div class="p-3">
+                            <h5 class="font-medium text-sm text-center text-gray-700 truncate">{{ name }}</h5>
+                        </div>
+                        <div class="p-2">
+                            <img src="{{ url_for('static', filename='uploads/' + path) }}" class="image-preview">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if aes_encrypted %}
+                <div class="mt-8">
+                    <h4 class="font-medium mb-2 text-gray-700">AES Encrypted Data</h4>
+                    <div class="relative">
+                        <textarea id="aesData" class="w-full p-3 border border-gray-300 rounded-lg font-mono text-sm bg-gray-50" rows="6" readonly>{{ aes_encrypted }}</textarea>
+                        <button onclick="copyAESData()" class="absolute top-2 right-2 bg-blue-100 text-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-200">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Decryption Section -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Doctor Decryption Portal</h2>
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                <p class="text-yellow-700 font-medium">Note: Only authorized doctors can decrypt images</p>
+            </div>
+            
+            {% if auth_error %}
+            <div class="error-message mb-6">
+                <p class="font-medium">Access Denied: Invalid doctor credentials</p>
+            </div>
+            {% endif %}
+            
+            <form action="/decrypt" method="POST" enctype="multipart/form-data">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Encrypted Image</label>
+                        <input type="file" name="encrypted_image" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Encryption Type</label>
+                        <select name="encryption_type" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                            <option value="">Select Encryption Type</option>
+                            <option value="Negative-Positive">Negative-Positive</option>
+                            <option value="Color Shuffling">Color Shuffling</option>
+                            <option value="Logistic-Sine">Logistic-Sine</option>
+                            <option value="AES">AES</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="aes-field hidden mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">AES Encrypted Data</label>
+                    <textarea name="aes_encrypted" class="w-full p-3 border border-gray-300 rounded-lg font-mono text-sm" rows="4" placeholder="Paste AES Encrypted Data Here"></textarea>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" name="username" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                </div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" name="password" class="w-full p-3 border border-gray-300 rounded-lg" required>
+                </div>
+                <button type="submit" class="mt-6 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium">
+                    Decrypt & Analyze Image
+                </button>
+            </form>
+
+            {% if decrypted and not auth_error %}
+            <div class="mt-8">
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Decrypted Results</h3>
+                
+                {% if predictions %}
+                <div class="mb-8">
+                    <h4 class="font-medium mb-3 text-gray-700">Tumor Detection Results</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for model, result in predictions.items() %}
+                        <div class="tumor-result {% if result.Prediction == 'Tumor' %}tumor-detected{% else %}no-tumor{% endif %}">
+                            <h4 class="font-bold text-lg mb-1">{{ model }}</h4>
+                            <p class="text-gray-800">
+                                <span class="font-semibold">Result:</span> {{ result.Prediction }}<br>
+                                <span class="font-semibold">Confidence:</span> {{ "%.2f"|format(result.Confidence * 100) }}%
+                            </p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="bg-gray-100 rounded-lg p-2">
+                    <img src="{{ url_for('static', filename='uploads/' + decrypted) }}" class="image-preview">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('select[name="encryption_type"]').addEventListener('change', function() {
+            document.querySelector('.aes-field').classList.toggle('hidden', this.value !== 'AES')
+        })
+        
+        function copyAESData() {
+            const aesData = document.getElementById('aesData');
+            aesData.select();
+            document.execCommand('copy');
+            const copyBtn = event.target;
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => { copyBtn.textContent = 'Copy' }, 2000);
+        }
+    </script>
+</body>
+</html>
