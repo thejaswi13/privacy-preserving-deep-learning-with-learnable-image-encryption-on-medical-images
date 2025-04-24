@@ -1,0 +1,10 @@
+🚀 How to Run the Application
+✅ Prerequisites
+Python ≥ 3.7 (Recommended: Python 3.11.0)
+PIP package installer
+📦 Installation Steps
+Clone the Repository or Download the ZIP:
+  git clone 
+cd your-repo
+Install Dependencies pip install -r requirements.txt
+Run the Flask Web App python app.py
