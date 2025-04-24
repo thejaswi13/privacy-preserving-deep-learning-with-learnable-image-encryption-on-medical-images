@@ -37,5 +37,32 @@ Key Components:
 - Only authenticated users can decrypt and review encrypted images.
 
 ---
+## 🚀 How to Run the Application
+
+### ✅ Prerequisites
+- Python ≥ **3.7** (Recommended: **Python 3.11.0**)
+- PIP package installer
+
+### 📦 Installation Steps
+
+1. **Clone the Repository** or Download the ZIP:
+   ```bash
+     git clone 
+   cd your-repo
+2. **Install Dependencies**
+   pip install -r requirements.txt
+3. **Run the Flask Web App**
+   python app.py
+   
+### 📌 Future Work
+
+- 🌍 Integration of federated learning for decentralized training
+
+- 🔍 Incorporation of SHAP/LIME for model interpretability
+
+- 📱 Deployment to cloud or mobile-ready environment
+
+- 🔧 GUI tool for local hospital systems with user-friendly interface
+
 
 
